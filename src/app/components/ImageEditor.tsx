@@ -1,12 +1,9 @@
-'use client';
-
 import React, { useRef, useCallback } from 'react';
-import Cropper from 'react-cropper';
+import Cropper, { ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCheck } from 'react-icons/fa';
 import clsx from 'clsx';
-import CropperType from 'cropperjs'; 
 
 interface ImageEditorProps {
   imageSrc: string;
@@ -14,20 +11,16 @@ interface ImageEditorProps {
   onCancel: () => void;
 }
 
-interface ReactCropperElement extends HTMLImageElement {
-  cropper: CropperType;
-}
-
 const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel }) => {
-  const cropperRef = useRef<ReactCropperElement>(null); 
+  const cropperRef = useRef<ReactCropperElement>(null); // Correct ref type for cropper
 
   const handleSave = useCallback(() => {
-    const cropper = cropperRef.current?.cropper; 
+    const cropper = cropperRef.current?.cropper; // Access the cropper instance properly
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas();
       if (croppedCanvas) {
-        const newSrc = croppedCanvas.toDataURL('image/jpeg');
-        onUpdate(newSrc); 
+        const newSrc = croppedCanvas.toDataURL('image/jpeg'); // Generate new blob URL for the edited image
+        onUpdate(newSrc); // Pass newSrc correctly
       }
     }
   }, [onUpdate]);
@@ -75,7 +68,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel 
               responsive={true}
               autoCropArea={1}
               checkOrientation={false}
-              ref={cropperRef} 
+              ref={cropperRef}
               movable={true}
               rotatable={false}
               scalable={true}

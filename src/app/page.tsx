@@ -1,10 +1,8 @@
-// ./app/page.tsx
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import jsPDF from 'jspdf';
-import Head from 'next/head'; // Import Head component for SEO
+import Head from 'next/head';
 import {
   DndContext,
   closestCenter,
@@ -25,11 +23,11 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import imageCompression from 'browser-image-compression';
 import { useDarkMode } from './context/DarkModeContext';
-import RenamePDFModal from './components/RenamePDFModal'; 
+import RenamePDFModal from './components/RenamePDFModal';
 
 interface ImageType {
   id: string;
-  src: string; 
+  src: string;
 }
 
 export default function Home() {
@@ -46,7 +44,7 @@ export default function Home() {
     useSensor(TouchSensor, {
       activationConstraint: {
         delay: 0,
-        tolerance: 5, 
+        tolerance: 5,
       },
     }),
     useSensor(PointerSensor, {
@@ -77,28 +75,35 @@ export default function Home() {
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file)); 
-    const newImages: ImageType[] = imageUrls.map(url => ({
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    const newImages: ImageType[] = imageUrls.map((url) => ({
       id: generateUniqueId(),
-      src: url, 
+      src: url,
     }));
     setImages((prevImages) => [...prevImages, ...newImages]);
     e.target.value = '';
   };
 
   const handleRemoveImage = (id: string) => {
-    const image = images.find(img => img.id === id);
+    const image = images.find((img) => img.id === id);
     if (image) {
-      URL.revokeObjectURL(image.src); 
+      URL.revokeObjectURL(image.src);
       setImages((prevImages) => prevImages.filter((img) => img.id !== id));
     }
   };
 
   const handleUpdateImage = (id: string, newSrc: string) => {
     setImages((prevImages) =>
-      prevImages.map((img) => (img.id === id ? { ...img, src: newSrc } : img))
+      prevImages.map((img) => {
+        if (img.id === id) {
+          URL.revokeObjectURL(img.src);
+          return { ...img, src: newSrc }; 
+        }
+        return img;
+      })
     );
   };
+  
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
@@ -114,48 +119,50 @@ export default function Home() {
       setIsGenerating(true);
       const pdf = new jsPDF('portrait', 'pt', 'a4');
   
-      const pdfWidth = pdf.internal.pageSize.getWidth(); // Full width of the page
-      const pdfHeight = pdf.internal.pageSize.getHeight(); // Full height of the page
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+  
+      const loadImage = (src: string) => {
+        return new Promise<HTMLImageElement>((resolve, reject) => {
+          const imgElement = new Image();
+          imgElement.src = src;
+          imgElement.onload = () => resolve(imgElement);
+          imgElement.onerror = () => reject(new Error('Image load error'));
+        });
+      };
   
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
-        const imgElement = new Image();
-        imgElement.src = img.src;
+        try {
+          const imgElement = await loadImage(img.src);
+          
+          const imgWidth = imgElement.width;
+          const imgHeight = imgElement.height;
   
-        await new Promise<void>((resolve, reject) => {
-          imgElement.onload = () => {
-            const imgWidth = imgElement.width;
-            const imgHeight = imgElement.height;
+          let renderedWidth = pdfWidth;
+          let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
   
-            // Calculate aspect ratio to fit the image perfectly without leaving margins
-            let renderedWidth = pdfWidth;
-            let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
+          if (renderedHeight > pdfHeight) {
+            renderedHeight = pdfHeight;
+            renderedWidth = (imgWidth * pdfHeight) / imgHeight;
+          }
   
-            if (renderedHeight > pdfHeight) {
-              renderedHeight = pdfHeight;
-              renderedWidth = (imgWidth * pdfHeight) / imgHeight;
-            }
+          if (i > 0) {
+            pdf.addPage();
+          }
   
-            if (i > 0) {
-              pdf.addPage();
-            }
-  
-            // Add the image at position (0, 0) to remove margins
-            pdf.addImage(
-              imgElement,
-              'JPEG',
-              0, // X position
-              0, // Y position
-              pdfWidth, // Full page width
-              pdfHeight // Full page height
-            );
-  
-            resolve();
-          };
-          imgElement.onerror = () => {
-            reject(new Error('Image load error'));
-          };
-        });
+          pdf.addImage(
+            imgElement,
+            'JPEG',
+            0,
+            0,
+            pdfWidth,
+            pdfHeight
+          );
+        } catch (error) {
+          console.error(`Error loading image ${i}:`, error);
+          toast.error(`Failed to load image ${i + 1}. Skipping this image.`);
+        }
       }
   
       pdf.save(pdfName);
@@ -166,7 +173,7 @@ export default function Home() {
     } finally {
       setIsGenerating(false);
     }
-  };  
+  };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -215,10 +222,10 @@ export default function Home() {
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file)); 
-    const newImages: ImageType[] = imageUrls.map(url => ({
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    const newImages: ImageType[] = imageUrls.map((url) => ({
       id: generateUniqueId(),
-      src: url, 
+      src: url,
     }));
     setImages((prevImages) => [...prevImages, ...newImages]);
   };
@@ -237,13 +244,31 @@ export default function Home() {
     toast.success(`PDF renamed to "${newName}"`);
   };
 
+  const handlePaste = (e: ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (const item of Array.from(items)) { 
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            const imageUrl = URL.createObjectURL(file);
+            const newImage: ImageType = { id: generateUniqueId(), src: imageUrl };
+            setImages((prevImages) => [...prevImages, newImage]);
+          }
+        }
+      }
+    }
+  };
+
   useEffect(() => {
+    window.addEventListener('paste', handlePaste);
     return () => {
+      window.removeEventListener('paste', handlePaste);
       images.forEach((img) => {
-        URL.revokeObjectURL(img.src); 
+        URL.revokeObjectURL(img.src);
       });
     };
-  }, [images]);
+  }, []);
 
   return (
     <>
@@ -301,7 +326,7 @@ export default function Home() {
           >
             <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
             <p className="text-gray-700 dark:text-gray-300 text-center">
-              Drag and drop images here, or click to browse
+              Drag and drop images here, or click to browse. You can also paste images from the clipboard.
             </p>
             <input
               ref={fileInputRef}
