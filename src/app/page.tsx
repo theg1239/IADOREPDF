@@ -1,5 +1,3 @@
-// src/app/page.tsx
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -29,21 +27,18 @@ export default function Home() {
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Initialize DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Drag activation distance
+        distance: 5, 
       },
     })
   );
 
-  // Handle image upload via file input
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Compress images before uploading
     const compressedFiles = await Promise.all(
       files.map(async (file) => {
         const options = {
@@ -55,30 +50,27 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file; // Return original file if compression fails
+          return file; 
         }
       })
     );
 
     const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
     setImages((prevImages) => [...prevImages, ...imageUrls]);
-    e.target.value = ''; // Reset the input value
+    e.target.value = '';
   };
 
-  // Handle image removal
   const handleRemoveImage = (index: number) => {
     URL.revokeObjectURL(images[index]); // Free up memory
     setImages((prevImages) => prevImages.filter((_, i) => i !== index));
   };
 
-  // Handle image update after cropping
   const handleUpdateImage = (index: number, newSrc: string) => {
     setImages((prevImages) =>
       prevImages.map((img, i) => (i === index ? newSrc : img))
     );
   };
 
-  // Handle drag end event
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (active.id !== over.id) {
@@ -88,7 +80,6 @@ export default function Home() {
     }
   };
 
-  // Generate PDF from images
   const createPDF = async () => {
     try {
       setIsGenerating(true);
@@ -106,7 +97,6 @@ export default function Home() {
             const imgWidth = imgElement.width;
             const imgHeight = imgElement.height;
 
-            // Calculate image dimensions to fit into PDF while maintaining aspect ratio
             let renderedWidth = pdfWidth;
             let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
 
@@ -144,7 +134,6 @@ export default function Home() {
     }
   };
 
-  // Handle files dropped via drag-and-drop
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
@@ -155,29 +144,24 @@ export default function Home() {
     handleCompressedFiles(files);
   };
 
-  // Prevent default behavior for drag over
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
   };
 
-  // Handle drag enter
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(true);
   };
 
-  // Handle drag leave
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
   };
 
-  // Trigger the hidden file input when the drop zone is clicked
   const handleZoneClick = () => {
     fileInputRef.current?.click();
   };
 
-  // Handle compression and setting images
   const handleCompressedFiles = async (files: File[]) => {
     const compressedFiles = await Promise.all(
       files.map(async (file) => {
@@ -190,7 +174,7 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file; // Return original file if compression fails
+          return file; 
         }
       })
     );
@@ -207,7 +191,6 @@ export default function Home() {
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
     >
-      {/* Dragging Overlay */}
       <div
         className={clsx(
           'absolute inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300',
@@ -216,12 +199,10 @@ export default function Home() {
       ></div>
 
       <div className="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg p-8 relative">
-        {/* Header */}
         <h1 className="text-3xl font-semibold text-center mb-6 text-gray-100">
           Image to PDF Converter
         </h1>
 
-        {/* Clickable and Draggable Drop Zone */}
         <div
           onClick={handleZoneClick}
           className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer relative"
@@ -242,7 +223,6 @@ export default function Home() {
           />
         </div>
 
-        {/* Image Preview with Drag-and-Drop Reordering */}
         {images.length > 0 && (
           <div className="mb-6">
             <h2 className="text-xl font-medium text-gray-300 mb-4">
@@ -271,7 +251,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Convert Button */}
         <button
           onClick={createPDF}
           disabled={images.length === 0 || isGenerating}
