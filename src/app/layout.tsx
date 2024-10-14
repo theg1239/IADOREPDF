@@ -34,13 +34,13 @@ export default function RootLayout({
       >
         <DarkModeProvider>
           <div className="flex flex-col min-h-screen">
-            <header className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-4 shadow-md flex items-center justify-between h-16">
-              <div className="flex items-center space-x-2 pt-2"> 
+            <header className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 pt-3 py-2 px-4 shadow-md flex items-center justify-between h-16">
+              <div className="flex items-center space-x-2 pt-2">
                 <Image
-                  src="/images/og-image.png"
+                  src="/images/og-image.png" 
                   alt="Img2PDF Logo"
-                  width={120} 
-                  height={100} 
+                  width={200}  
+                  height={50}  
                 />
               </div>
               <DarkModeToggle />
