@@ -6,7 +6,7 @@ import 'cropperjs/dist/cropper.css';
 import { motion } from 'framer-motion';
 import { FaTimes, FaCheck } from 'react-icons/fa';
 import clsx from 'clsx';
-import CropperType from 'cropperjs'; 
+import CropperType from 'cropperjs';
 
 interface ReactCropperElement extends HTMLImageElement {
   cropper: CropperType;
@@ -53,18 +53,21 @@ const ImageEditor = ({ imageSrc, onSave, onCancel }: ImageEditorProps) => {
         exit={{ scale: 0.8, opacity: 0 }}
         transition={{ duration: 0.3 }}
       >
+        {/* Close Button */}
         <button
           onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-300 hover:text-gray-100 focus:outline-none"
+          className="absolute top-4 right-4 text-gray-300 dark:text-gray-100 hover:text-gray-100 dark:hover:text-gray-300 focus:outline-none"
           aria-label="Close Editor"
         >
           <FaTimes size={24} />
         </button>
 
-        <div className="relative w-full h-80 md:h-96 bg-gray-700">
+        {/* Cropper Container */}
+        <div className="relative w-full h-80 md:h-96 bg-gray-700 dark:bg-gray-800">
           <Cropper
             src={imageSrc}
             style={{ height: '100%', width: '100%' }}
+            // Cropper.js stuff
             initialAspectRatio={undefined} 
             guides={true}
             viewMode={1}
@@ -80,17 +83,19 @@ const ImageEditor = ({ imageSrc, onSave, onCancel }: ImageEditorProps) => {
           />
         </div>
 
+        {/* Controls */}
         <div className="flex flex-col items-center mt-4 space-y-4 px-6">
+          {/* Action Buttons */}
           <div className="flex space-x-4">
             <button
               onClick={onCancel}
-              className="px-6 py-2 bg-gray-600 text-gray-300 rounded-md hover:bg-gray-500 focus:outline-none transition-colors"
+              className="px-6 py-2 bg-gray-600 dark:bg-gray-700 text-gray-300 dark:text-gray-200 rounded-md hover:bg-gray-500 dark:hover:bg-gray-600 focus:outline-none transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none flex items-center transition-colors"
+              className="px-6 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none flex items-center transition-colors"
             >
               <FaCheck className="mr-2" /> Save
             </button>

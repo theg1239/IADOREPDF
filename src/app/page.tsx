@@ -20,6 +20,7 @@ import clsx from 'clsx';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import imageCompression from 'browser-image-compression';
+import { useDarkMode } from './context/DarkModeContext';
 
 export default function Home() {
   const [images, setImages] = useState<string[]>([]);
@@ -124,7 +125,7 @@ export default function Home() {
         });
       }
 
-      pdf.save('images.pdf');
+      pdf.save('converted-images.pdf');
       toast.success('PDF generated successfully!');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -162,6 +163,8 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
+  const { isDarkMode } = useDarkMode();
+
   const handleCompressedFiles = async (files: File[]) => {
     const compressedFiles = await Promise.all(
       files.map(async (file) => {
@@ -185,7 +188,7 @@ export default function Home() {
 
   return (
     <div
-      className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative"
+      className="bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative transition-colors duration-300"
       onDrop={handleDrop}
       onDragOver={handleDragOver}
       onDragEnter={handleDragEnter}
@@ -198,19 +201,19 @@ export default function Home() {
         )}
       ></div>
 
-      <div className="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg p-8 relative">
-        <h1 className="text-3xl font-semibold text-center mb-6 text-gray-100">
-          Image to PDF Converter
+      <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
+        <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
+          Image to PDF
         </h1>
 
         <div
           onClick={handleZoneClick}
-          className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer relative"
+          className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer relative"
         >
-          <AiOutlineCloudUpload className="text-4xl text-blue-500 mb-4" />
-          <p className="text-gray-300 text-center">
+          <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
+          <p className="text-gray-700 dark:text-gray-300 text-center">
             Drag and drop images anywhere on the page, or click anywhere to{' '}
-            <span className="text-blue-500 underline">browse</span>
+            <span className="text-blue-500 dark:text-blue-400 underline">browse</span>
           </p>
           <input
             ref={fileInputRef}
@@ -225,7 +228,7 @@ export default function Home() {
 
         {images.length > 0 && (
           <div className="mb-6">
-            <h2 className="text-xl font-medium text-gray-300 mb-4">
+            <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-4">
               Uploaded Images
             </h2>
             <DndContext
@@ -255,7 +258,7 @@ export default function Home() {
           onClick={createPDF}
           disabled={images.length === 0 || isGenerating}
           className={clsx(
-            'w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors',
+            'w-full flex items-center justify-center px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors',
             {
               'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
             }
@@ -271,8 +274,18 @@ export default function Home() {
           )}
         </button>
       </div>
-      {/* Toast Notifications */}
-      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
+      <ToastContainer
+       position="bottom-right" 
+       autoClose={3000} 
+       hideProgressBar
+       newestOnTop
+       closeOnClick
+       rtl={false}
+       pauseOnFocusLoss
+       draggable
+       pauseOnHover
+       theme={isDarkMode ? "dark" : "light"}  
+       />
     </div>
   );
 }

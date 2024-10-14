@@ -53,7 +53,7 @@ const SortableImage = React.memo(function SortableImage({
         ref={setNodeRef}
         style={style}
         className={clsx(
-          'relative group bg-gray-800 rounded-md overflow-hidden cursor-grab',
+          'relative group bg-gray-800 dark:bg-gray-700 rounded-md overflow-hidden cursor-grab',
           isDragging && 'shadow-2xl'
         )}
         {...attributes}
@@ -67,13 +67,13 @@ const SortableImage = React.memo(function SortableImage({
         onClick={() => setIsEditing(true)}
       >
         <div
-          className="absolute top-2 left-2 text-gray-400 cursor-grab"
+          className="absolute top-2 left-2 text-gray-400 dark:text-gray-300 cursor-grab"
           {...listeners}
         >
           <FaGripVertical />
         </div>
 
-        <div className="absolute top-2 right-2 bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
+        <div className="absolute top-2 right-2 bg-blue-600 dark:bg-blue-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-semibold">
           {index + 1}
         </div>
 
@@ -89,7 +89,7 @@ const SortableImage = React.memo(function SortableImage({
             e.stopPropagation(); 
             onRemove(index);
           }}
-          className="absolute bottom-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-2 right-2 bg-red-600 dark:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label="Remove Image"
         >
           <FaTrash className="w-4 h-4" />
