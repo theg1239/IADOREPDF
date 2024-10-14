@@ -36,7 +36,7 @@ export default function RootLayout({
           <div className="flex flex-col min-h-screen">
             <header className="w-full bg-blue-600 dark:bg-blue-800 text-white py-4 px-8 shadow-lg flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-semibold tracking-wide">ImgToPDF Converter</h1>
+                <h1 className="text-2xl font-semibold tracking-wide">Img2PDF Converter</h1>
               </div>
               <DarkModeToggle />
             </header>

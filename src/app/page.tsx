@@ -1,7 +1,10 @@
+// ./app/page.tsx
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
 import jsPDF from 'jspdf';
+import Head from 'next/head'; // Import Head component for SEO
 import {
   DndContext,
   closestCenter,
@@ -111,8 +114,8 @@ export default function Home() {
       setIsGenerating(true);
       const pdf = new jsPDF('portrait', 'pt', 'a4');
   
-      const pdfWidth = pdf.internal.pageSize.getWidth(); 
-      const pdfHeight = pdf.internal.pageSize.getHeight(); 
+      const pdfWidth = pdf.internal.pageSize.getWidth(); // Full width of the page
+      const pdfHeight = pdf.internal.pageSize.getHeight(); // Full height of the page
   
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
@@ -124,6 +127,7 @@ export default function Home() {
             const imgWidth = imgElement.width;
             const imgHeight = imgElement.height;
   
+            // Calculate aspect ratio to fit the image perfectly without leaving margins
             let renderedWidth = pdfWidth;
             let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
   
@@ -136,13 +140,14 @@ export default function Home() {
               pdf.addPage();
             }
   
+            // Add the image at position (0, 0) to remove margins
             pdf.addImage(
               imgElement,
               'JPEG',
-              0, 
-              0, 
-              pdfWidth, 
-              pdfHeight 
+              0, // X position
+              0, // Y position
+              pdfWidth, // Full page width
+              pdfHeight // Full page height
             );
   
             resolve();
@@ -241,124 +246,153 @@ export default function Home() {
   }, [images]);
 
   return (
-    <div
-      className={clsx(
-        'bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative transition-colors duration-300'
-      )}
-    >
+    <>
+      <Head>
+        <title>Free Image to PDF Converter | img2pdf.in</title>
+        <meta name="description" content="Convert your images to PDF quickly and securely with img2pdf.in. No registration required." />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta property="og:title" content="Free Image to PDF Converter | img2pdf.in" />
+        <meta property="og:description" content="Convert images to PDF easily. Supports JPG, PNG, and more." />
+        <meta property="og:image" content="/images/og-image.png" />
+        <meta property="og:url" content="https://img2pdf.in" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://img2pdf.in" />
+        <link rel="icon" href="/favicon.ico" />
+        <script type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "url": "https://img2pdf.in",
+            "name": "img2pdf.in",
+            "description": "A free tool to convert images to PDFs.",
+            "publisher": {
+              "@type": "Organization",
+              "name": "img2pdf.in"
+            }
+          })}
+        </script>
+      </Head>
+
       <div
         className={clsx(
-          'absolute inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300',
-          isDraggingOver && 'opacity-100'
+          'bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative transition-colors duration-300'
         )}
-      ></div>
-
-      <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
-        <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
-          Image to PDF
-        </h1>
-
+      >
         <div
-          onClick={handleZoneClick}
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragEnter={handleDragEnter}
-          onDragLeave={handleDragLeave}
-          className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer relative"
-        >
-          <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
-          <p className="text-gray-700 dark:text-gray-300 text-center">
-            Drag and drop images here, or click to browse </p>
-          <input
-            ref={fileInputRef}
-            id="file-upload"
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
+          className={clsx(
+            'absolute inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300',
+            isDraggingOver && 'opacity-100'
+          )}
+        ></div>
+
+        <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
+          <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
+            Image to PDF
+          </h1>
+
+          <div
+            onClick={handleZoneClick}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer relative"
+          >
+            <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
+            <p className="text-gray-700 dark:text-gray-300 text-center">
+              Drag and drop images here, or click to browse
+            </p>
+            <input
+              ref={fileInputRef}
+              id="file-upload"
+              type="file"
+              multiple
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+          </div>
+
+          {images.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-4">
+                Uploaded Images
+              </h2>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={images.map(img => img.id)} strategy={verticalListSortingStrategy}>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {images.map((img, index) => (
+                      <SortableImage
+                        key={img.id}
+                        id={img.id}
+                        src={img.src}
+                        index={index}
+                        onRemove={handleRemoveImage}
+                        onUpdate={handleUpdateImage}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            </div>
+          )}
+
+          <div className="flex items-center space-x-4 w-full">
+            <button
+              onClick={openRenameModal}
+              className="flex items-center justify-center px-6 py-4 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none"
+              aria-label="Rename PDF"
+            >
+              <AiOutlineEdit className="w-6 h-6" /> 
+            </button>
+
+            <button
+              onClick={createPDF}
+              disabled={images.length === 0 || isGenerating}
+              className={clsx(
+                'flex flex-grow items-center justify-center px-6 py-4 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors',
+                {
+                  'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
+                }
+              )}
+            >
+              {isGenerating ? (
+                <>
+                  <AiOutlineLoading3Quarters className="animate-spin mr-2" />
+                  Generating PDF...
+                </>
+              ) : (
+                'Convert to PDF'
+              )}
+            </button>
+          </div>
         </div>
 
-        {images.length > 0 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-medium text-gray-800 dark:text-gray-200 mb-4">
-              Uploaded Images
-            </h2>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext items={images.map(img => img.id)} strategy={verticalListSortingStrategy}>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {images.map((img, index) => (
-                    <SortableImage
-                      key={img.id}
-                      id={img.id}
-                      src={img.src}
-                      index={index}
-                      onRemove={handleRemoveImage}
-                      onUpdate={handleUpdateImage}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-        )}
+        <RenamePDFModal
+          isOpen={isRenameModalOpen}
+          onClose={closeRenameModal}
+          onRename={handleRename}
+          currentName={pdfName}
+        />
 
-<div className="flex items-center space-x-4 w-full">
-  <button
-    onClick={openRenameModal}
-    className="flex items-center justify-center px-6 py-4 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none"
-    aria-label="Rename PDF"
-  >
-    <AiOutlineEdit className="w-6 h-6" /> 
-  </button>
-
-  <button
-    onClick={createPDF}
-    disabled={images.length === 0 || isGenerating}
-    className={clsx(
-      'flex flex-grow items-center justify-center px-6 py-4 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors',
-      {
-        'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
-      }
-    )}
-  >
-    {isGenerating ? (
-      <>
-        <AiOutlineLoading3Quarters className="animate-spin mr-2" />
-        Generating PDF...
-      </>
-    ) : (
-      'Convert to PDF'
-    )}
-  </button>
-</div>
-
+        <ToastContainer
+          position="bottom-right"
+          autoClose={3000}
+          hideProgressBar
+          newestOnTop
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme={isDarkMode ? "dark" : "light"}
+        />
       </div>
-
-      <RenamePDFModal
-        isOpen={isRenameModalOpen}
-        onClose={closeRenameModal}
-        onRename={handleRename}
-        currentName={pdfName}
-      />
-
-      <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar
-        newestOnTop
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-        theme={isDarkMode ? "dark" : "light"}
-      />
-    </div>
+    </>
   );
 }

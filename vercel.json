@@ -1,0 +1,11 @@
+{
+    "redirects": [
+      {
+        "source": "/(.*)", 
+        "destination": "https://img2pdf.in/$1", 
+        "has": [{ "type": "host", "value": "www.img2pdf.in" }], 
+        "statusCode": 301
+      }
+    ]
+  }
+  
