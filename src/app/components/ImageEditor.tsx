@@ -1,108 +1,102 @@
 'use client';
 
-import { useRef, useCallback } from 'react';
-import Cropper from 'react-cropper'; 
+import React, { useRef, useCallback } from 'react';
+import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FaTimes, FaCheck } from 'react-icons/fa';
 import clsx from 'clsx';
-import CropperType from 'cropperjs';
+import CropperType from 'cropperjs'; 
+
+interface ImageEditorProps {
+  imageSrc: string;
+  onUpdate: (newSrc: string) => void;
+  onCancel: () => void;
+}
 
 interface ReactCropperElement extends HTMLImageElement {
   cropper: CropperType;
 }
 
-interface ImageEditorProps {
-  imageSrc: string;
-  onSave: (croppedImage: string) => void;
-  onCancel: () => void;
-}
-
-const ImageEditor = ({ imageSrc, onSave, onCancel }: ImageEditorProps) => {
-  const cropperRef = useRef<ReactCropperElement>(null);
+const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel }) => {
+  const cropperRef = useRef<ReactCropperElement>(null); 
 
   const handleSave = useCallback(() => {
-    const cropper = cropperRef.current?.cropper;
+    const cropper = cropperRef.current?.cropper; 
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas();
-      if (!croppedCanvas) {
-        alert('Failed to crop the image.');
-        return;
+      if (croppedCanvas) {
+        const newSrc = croppedCanvas.toDataURL('image/jpeg');
+        onUpdate(newSrc); 
       }
-      croppedCanvas.toBlob(
-        (blob: Blob | null) => { 
-          if (blob) {
-            const croppedImageUrl = URL.createObjectURL(blob);
-            onSave(croppedImageUrl);
-          } else {
-            alert('Failed to crop the image.');
-          }
-        },
-        'image/jpeg',
-        1
-      );
     }
-  }, [onSave]);
+  }, [onUpdate]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+    <AnimatePresence>
       <motion.div
-        className="bg-gray-800 dark:bg-gray-900 rounded-lg overflow-hidden shadow-xl w-11/12 md:w-3/4 lg:w-1/2 relative"
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.8, opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onCancel}
       >
-        {/* Close Button */}
-        <button
-          onClick={onCancel}
-          className="absolute top-4 right-4 text-gray-300 dark:text-gray-100 hover:text-gray-100 dark:hover:text-gray-300 focus:outline-none"
-          aria-label="Close Editor"
+        <motion.div
+          className={clsx(
+            'bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl w-11/12 md:w-3/4 lg:w-1/2 relative',
+            'flex flex-col'
+          )}
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.8, opacity: 0 }}
+          transition={{ duration: 0.3 }}
+          onClick={(e) => e.stopPropagation()}
         >
-          <FaTimes size={24} />
-        </button>
-
-        {/* Cropper Container */}
-        <div className="relative w-full h-80 md:h-96 bg-gray-700 dark:bg-gray-800">
-          <Cropper
-            src={imageSrc}
-            style={{ height: '100%', width: '100%' }}
-            // Cropper.js stuff
-            initialAspectRatio={undefined} 
-            guides={true}
-            viewMode={1}
-            background={false}
-            responsive={true}
-            autoCropArea={1}
-            checkOrientation={false} 
-            ref={cropperRef} 
-            movable={true}
-            rotatable={false}
-            scalable={true}
-            zoomable={false} 
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="flex flex-col items-center mt-4 space-y-4 px-6">
-          {/* Action Buttons */}
-          <div className="flex space-x-4">
+          <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">
+              Edit Image
+            </h2>
             <button
               onClick={onCancel}
-              className="px-6 py-2 bg-gray-600 dark:bg-gray-700 text-gray-300 dark:text-gray-200 rounded-md hover:bg-gray-500 dark:hover:bg-gray-600 focus:outline-none transition-colors"
+              className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100 focus:outline-none"
+              aria-label="Close Editor"
             >
-              Cancel
+              <FaTimes size={20} />
             </button>
+          </div>
+
+          <div className="relative w-full h-80 md:h-96 bg-gray-700 dark:bg-gray-800">
+            <Cropper
+              src={imageSrc}
+              style={{ height: '100%', width: '100%' }}
+              guides={true}
+              viewMode={1}
+              background={false}
+              responsive={true}
+              autoCropArea={1}
+              checkOrientation={false}
+              ref={cropperRef} 
+              movable={true}
+              rotatable={false}
+              scalable={true}
+              zoomable={true}
+              cropBoxResizable={true}
+              cropBoxMovable={true}
+              toggleDragModeOnDblclick={false}
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700 space-y-4 md:space-y-0">
             <button
               onClick={handleSave}
-              className="px-6 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none flex items-center transition-colors"
+              className="flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none transition-colors"
             >
               <FaCheck className="mr-2" /> Save
             </button>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
   );
 };
 

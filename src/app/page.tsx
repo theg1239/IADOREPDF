@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import jsPDF from 'jspdf';
 import {
   DndContext,
   closestCenter,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -14,24 +15,41 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { AiOutlineCloudUpload, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import { AiOutlineCloudUpload, AiOutlineLoading3Quarters, AiOutlineEdit } from 'react-icons/ai';
 import SortableImage from './components/SortableImage';
 import clsx from 'clsx';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import imageCompression from 'browser-image-compression';
 import { useDarkMode } from './context/DarkModeContext';
+import RenamePDFModal from './components/RenamePDFModal'; 
+
+interface ImageType {
+  id: string;
+  src: string; 
+}
 
 export default function Home() {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImageType[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState<boolean>(false);
+  const [pdfName, setPdfName] = useState<string>('converted-images.pdf');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const generateUniqueId = () => `${Date.now()}-${Math.random()}`;
+
   const sensors = useSensors(
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 0,
+        tolerance: 5, 
+      },
+    }),
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, 
+        distance: 5,
+        delay: 0,
       },
     })
   );
@@ -51,32 +69,39 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file; 
+          return file;
         }
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
-    setImages((prevImages) => [...prevImages, ...imageUrls]);
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file)); 
+    const newImages: ImageType[] = imageUrls.map(url => ({
+      id: generateUniqueId(),
+      src: url, 
+    }));
+    setImages((prevImages) => [...prevImages, ...newImages]);
     e.target.value = '';
   };
 
-  const handleRemoveImage = (index: number) => {
-    URL.revokeObjectURL(images[index]); // Free up memory
-    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  const handleRemoveImage = (id: string) => {
+    const image = images.find(img => img.id === id);
+    if (image) {
+      URL.revokeObjectURL(image.src); 
+      setImages((prevImages) => prevImages.filter((img) => img.id !== id));
+    }
   };
 
-  const handleUpdateImage = (index: number, newSrc: string) => {
+  const handleUpdateImage = (id: string, newSrc: string) => {
     setImages((prevImages) =>
-      prevImages.map((img, i) => (i === index ? newSrc : img))
+      prevImages.map((img) => (img.id === id ? { ...img, src: newSrc } : img))
     );
   };
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
     if (active.id !== over.id) {
-      const oldIndex = images.findIndex((img) => img === active.id);
-      const newIndex = images.findIndex((img) => img === over.id);
+      const oldIndex = images.findIndex((img) => img.id === active.id);
+      const newIndex = images.findIndex((img) => img.id === over.id);
       setImages((images) => arrayMove(images, oldIndex, newIndex));
     }
   };
@@ -85,38 +110,41 @@ export default function Home() {
     try {
       setIsGenerating(true);
       const pdf = new jsPDF('portrait', 'pt', 'a4');
-
+  
+      const pdfWidth = pdf.internal.pageSize.getWidth(); 
+      const pdfHeight = pdf.internal.pageSize.getHeight(); 
+  
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         const imgElement = new Image();
-        imgElement.src = img;
-
+        imgElement.src = img.src;
+  
         await new Promise<void>((resolve, reject) => {
           imgElement.onload = () => {
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = pdf.internal.pageSize.getHeight();
             const imgWidth = imgElement.width;
             const imgHeight = imgElement.height;
-
+  
             let renderedWidth = pdfWidth;
             let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
-
+  
             if (renderedHeight > pdfHeight) {
               renderedHeight = pdfHeight;
               renderedWidth = (imgWidth * pdfHeight) / imgHeight;
             }
-
+  
             if (i > 0) {
               pdf.addPage();
             }
+  
             pdf.addImage(
               imgElement,
               'JPEG',
-              (pdfWidth - renderedWidth) / 2,
-              (pdfHeight - renderedHeight) / 2,
-              renderedWidth,
-              renderedHeight
+              0, 
+              0, 
+              pdfWidth, 
+              pdfHeight 
             );
+  
             resolve();
           };
           imgElement.onerror = () => {
@@ -124,8 +152,8 @@ export default function Home() {
           };
         });
       }
-
-      pdf.save('converted-images.pdf');
+  
+      pdf.save(pdfName);
       toast.success('PDF generated successfully!');
     } catch (error) {
       console.error('Error generating PDF:', error);
@@ -133,7 +161,7 @@ export default function Home() {
     } finally {
       setIsGenerating(false);
     }
-  };
+  };  
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -177,22 +205,46 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file; 
+          return file;
         }
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
-    setImages((prevImages) => [...prevImages, ...imageUrls]);
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file)); 
+    const newImages: ImageType[] = imageUrls.map(url => ({
+      id: generateUniqueId(),
+      src: url, 
+    }));
+    setImages((prevImages) => [...prevImages, ...newImages]);
   };
+
+  const openRenameModal = () => {
+    setIsRenameModalOpen(true);
+  };
+
+  const closeRenameModal = () => {
+    setIsRenameModalOpen(false);
+  };
+
+  const handleRename = (newName: string) => {
+    setPdfName(newName.endsWith('.pdf') ? newName : `${newName}.pdf`);
+    closeRenameModal();
+    toast.success(`PDF renamed to "${newName}"`);
+  };
+
+  useEffect(() => {
+    return () => {
+      images.forEach((img) => {
+        URL.revokeObjectURL(img.src); 
+      });
+    };
+  }, [images]);
 
   return (
     <div
-      className="bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative transition-colors duration-300"
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
-      onDragEnter={handleDragEnter}
-      onDragLeave={handleDragLeave}
+      className={clsx(
+        'bg-gray-50 dark:bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative transition-colors duration-300'
+      )}
     >
       <div
         className={clsx(
@@ -208,13 +260,15 @@ export default function Home() {
 
         <div
           onClick={handleZoneClick}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
           className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer relative"
         >
           <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
           <p className="text-gray-700 dark:text-gray-300 text-center">
-            Drag and drop images anywhere on the page, or click anywhere to{' '}
-            <span className="text-blue-500 dark:text-blue-400 underline">browse</span>
-          </p>
+            Drag and drop images here, or click to browse </p>
           <input
             ref={fileInputRef}
             id="file-upload"
@@ -236,13 +290,13 @@ export default function Home() {
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={images} strategy={verticalListSortingStrategy}>
+              <SortableContext items={images.map(img => img.id)} strategy={verticalListSortingStrategy}>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {images.map((img, index) => (
                     <SortableImage
-                      key={img}
-                      id={img}
-                      src={img}
+                      key={img.id}
+                      id={img.id}
+                      src={img.src}
                       index={index}
                       onRemove={handleRemoveImage}
                       onUpdate={handleUpdateImage}
@@ -254,38 +308,57 @@ export default function Home() {
           </div>
         )}
 
-        <button
-          onClick={createPDF}
-          disabled={images.length === 0 || isGenerating}
-          className={clsx(
-            'w-full flex items-center justify-center px-6 py-3 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors',
-            {
-              'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
-            }
-          )}
-        >
-          {isGenerating ? (
-            <>
-              <AiOutlineLoading3Quarters className="animate-spin mr-2" />
-              Generating PDF...
-            </>
-          ) : (
-            'Convert to PDF'
-          )}
-        </button>
+<div className="flex items-center space-x-4 w-full">
+  <button
+    onClick={openRenameModal}
+    className="flex items-center justify-center px-6 py-4 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none"
+    aria-label="Rename PDF"
+  >
+    <AiOutlineEdit className="w-6 h-6" /> 
+  </button>
+
+  <button
+    onClick={createPDF}
+    disabled={images.length === 0 || isGenerating}
+    className={clsx(
+      'flex flex-grow items-center justify-center px-6 py-4 bg-blue-600 dark:bg-blue-700 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors',
+      {
+        'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
+      }
+    )}
+  >
+    {isGenerating ? (
+      <>
+        <AiOutlineLoading3Quarters className="animate-spin mr-2" />
+        Generating PDF...
+      </>
+    ) : (
+      'Convert to PDF'
+    )}
+  </button>
+</div>
+
       </div>
+
+      <RenamePDFModal
+        isOpen={isRenameModalOpen}
+        onClose={closeRenameModal}
+        onRename={handleRename}
+        currentName={pdfName}
+      />
+
       <ToastContainer
-       position="bottom-right" 
-       autoClose={3000} 
-       hideProgressBar
-       newestOnTop
-       closeOnClick
-       rtl={false}
-       pauseOnFocusLoss
-       draggable
-       pauseOnHover
-       theme={isDarkMode ? "dark" : "light"}  
-       />
+        position="bottom-right"
+        autoClose={3000}
+        hideProgressBar
+        newestOnTop
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme={isDarkMode ? "dark" : "light"}
+      />
     </div>
   );
 }

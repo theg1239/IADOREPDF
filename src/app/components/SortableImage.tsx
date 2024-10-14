@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
-import { FaTrash, FaGripVertical } from 'react-icons/fa';
+import { FaTrash, FaGripVertical, FaEdit } from 'react-icons/fa'; 
 import clsx from 'clsx';
 import ImageEditor from './ImageEditor';
 
@@ -12,8 +12,8 @@ interface SortableImageProps {
   id: string;
   src: string;
   index: number;
-  onRemove: (index: number) => void;
-  onUpdate: (index: number, newSrc: string) => void;
+  onRemove: (id: string) => void;
+  onUpdate: (id: string, newSrc: string) => void;
 }
 
 const SortableImage = React.memo(function SortableImage({
@@ -39,12 +39,9 @@ const SortableImage = React.memo(function SortableImage({
   };
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editedSrc, setEditedSrc] = useState<string>(src);
 
-  const handleSave = (croppedImage: string) => {
-    setEditedSrc(croppedImage);
-    onUpdate(index, croppedImage); 
-    setIsEditing(false);
+  const handleSave = (newSrc: string) => {
+    onUpdate(id, newSrc); 
   };
 
   return (
@@ -53,22 +50,21 @@ const SortableImage = React.memo(function SortableImage({
         ref={setNodeRef}
         style={style}
         className={clsx(
-          'relative group bg-gray-800 dark:bg-gray-700 rounded-md overflow-hidden cursor-grab',
-          isDragging && 'shadow-2xl'
+          'relative group bg-gray-800 dark:bg-gray-700 rounded-md overflow-hidden',
+          isDragging ? 'shadow-2xl cursor-grabbing' : 'cursor-pointer'
         )}
-        {...attributes}
-        {...listeners}
+        {...attributes} 
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         layout
         initial={{ opacity: 1 }}
         animate={{ opacity: isDragging ? 0.8 : 1 }}
         exit={{ opacity: 0 }}
-        onClick={() => setIsEditing(true)}
+        onClick={() => setIsEditing(true)} 
       >
         <div
-          className="absolute top-2 left-2 text-gray-400 dark:text-gray-300 cursor-grab"
-          {...listeners}
+          className="absolute top-2 left-2 text-gray-400 dark:text-gray-300 cursor-grab z-10 touch-none"
+          {...listeners} 
         >
           <FaGripVertical />
         </div>
@@ -78,7 +74,7 @@ const SortableImage = React.memo(function SortableImage({
         </div>
 
         <img
-          src={editedSrc}
+          src={src}
           alt={`upload-${index}`}
           className="w-full h-32 object-cover"
           loading="lazy"
@@ -86,8 +82,19 @@ const SortableImage = React.memo(function SortableImage({
 
         <button
           onClick={(e) => {
-            e.stopPropagation(); 
-            onRemove(index);
+            e.stopPropagation();
+            setIsEditing(true); 
+          }}
+          className="absolute bottom-2 left-2 bg-blue-600 dark:bg-blue-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+          aria-label="Edit Image"
+        >
+          <FaEdit className="w-4 h-4" />
+        </button>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(id); 
           }}
           className="absolute bottom-2 right-2 bg-red-600 dark:bg-red-700 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
           aria-label="Remove Image"
@@ -98,8 +105,8 @@ const SortableImage = React.memo(function SortableImage({
 
       {isEditing && (
         <ImageEditor
-          imageSrc={editedSrc}
-          onSave={handleSave}
+          imageSrc={src}
+          onUpdate={handleSave} 
           onCancel={() => setIsEditing(false)}
         />
       )}
