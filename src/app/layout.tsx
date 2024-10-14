@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
-import Image from 'next/image'; 
+import Image from 'next/image';
 import localFont from 'next/font/local';
 import './globals.css';
 import { DarkModeProvider } from './context/DarkModeContext';
 import DarkModeToggle from './components/DarkModeToggle';
-import Link from 'next/link'; 
+import Link from 'next/link';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -18,7 +18,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: 'imgtopdf - Convert Images to PDF',
+  title: 'IMG2PDF - Convert Images to PDF',
   description: 'Easily convert multiple images into a single PDF file.',
 };
 
@@ -31,12 +31,17 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-300`}
-  >
+      >
         <DarkModeProvider>
           <div className="flex flex-col min-h-screen">
-            <header className="w-full bg-blue-600 dark:bg-blue-800 text-white py-4 px-8 shadow-lg flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <h1 className="text-2xl font-semibold tracking-wide">Img2PDF Converter</h1>
+            <header className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 py-2 px-4 shadow-md flex items-center justify-between h-16">
+              <div className="flex items-center space-x-2 pt-2"> 
+                <Image
+                  src="/images/og-image.png"
+                  alt="Img2PDF Logo"
+                  width={120} 
+                  height={100} 
+                />
               </div>
               <DarkModeToggle />
             </header>

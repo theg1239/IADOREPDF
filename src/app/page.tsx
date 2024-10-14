@@ -270,7 +270,7 @@ export default function Home() {
     <>
       <Head>
         <meta charSet="UTF-8" />
-        <title>Convert Images to PDF Online - Free & Fast | img2pdf.in</title>
+        <title>Convert Images to PDF Online - Free & Fast | IMG2PDF.in</title>
         <meta
           name="description"
           content="Convert your images to PDF quickly and securely with img2pdf.in. No registration required."
@@ -353,11 +353,8 @@ export default function Home() {
 
         <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
           <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
-            Free Online Image to PDF Converter
+            Images to PDF
           </h1>
-          <p className="text-center text-gray-700 dark:text-gray-300 mb-6">
-            Easily convert your JPG, PNG, and other image files to PDF. No registration, no watermark, and 100% secure.
-          </p>
 
           <div
             onClick={handleZoneClick}
