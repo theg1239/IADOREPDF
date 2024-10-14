@@ -16,7 +16,11 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { AiOutlineCloudUpload, AiOutlineLoading3Quarters, AiOutlineEdit } from 'react-icons/ai';
+import {
+  AiOutlineCloudUpload,
+  AiOutlineLoading3Quarters,
+  AiOutlineEdit,
+} from 'react-icons/ai';
 import SortableImage from './components/SortableImage';
 import clsx from 'clsx';
 import { toast, ToastContainer } from 'react-toastify';
@@ -97,13 +101,12 @@ export default function Home() {
       prevImages.map((img) => {
         if (img.id === id) {
           URL.revokeObjectURL(img.src);
-          return { ...img, src: newSrc }; 
+          return { ...img, src: newSrc };
         }
         return img;
       })
     );
   };
-  
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
@@ -118,10 +121,10 @@ export default function Home() {
     try {
       setIsGenerating(true);
       const pdf = new jsPDF('portrait', 'pt', 'a4');
-  
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-  
+
       const loadImage = (src: string) => {
         return new Promise<HTMLImageElement>((resolve, reject) => {
           const imgElement = new Image();
@@ -130,41 +133,34 @@ export default function Home() {
           imgElement.onerror = () => reject(new Error('Image load error'));
         });
       };
-  
+
       for (let i = 0; i < images.length; i++) {
         const img = images[i];
         try {
           const imgElement = await loadImage(img.src);
-          
+
           const imgWidth = imgElement.width;
           const imgHeight = imgElement.height;
-  
+
           let renderedWidth = pdfWidth;
           let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
-  
+
           if (renderedHeight > pdfHeight) {
             renderedHeight = pdfHeight;
             renderedWidth = (imgWidth * pdfHeight) / imgHeight;
           }
-  
+
           if (i > 0) {
             pdf.addPage();
           }
-  
-          pdf.addImage(
-            imgElement,
-            'JPEG',
-            0,
-            0,
-            pdfWidth,
-            pdfHeight
-          );
+
+          pdf.addImage(imgElement, 'JPEG', 0, 0, pdfWidth, pdfHeight);
         } catch (error) {
           console.error(`Error loading image ${i}:`, error);
           toast.error(`Failed to load image ${i + 1}. Skipping this image.`);
         }
       }
-  
+
       pdf.save(pdfName);
       toast.success('PDF generated successfully!');
     } catch (error) {
@@ -247,7 +243,7 @@ export default function Home() {
   const handlePaste = (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (items) {
-      for (const item of Array.from(items)) { 
+      for (const item of Array.from(items)) {
         if (item.type.startsWith('image/')) {
           const file = item.getAsFile();
           if (file) {
@@ -273,28 +269,72 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Free Image to PDF Converter | img2pdf.in</title>
-        <meta name="description" content="Convert your images to PDF quickly and securely with img2pdf.in. No registration required." />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="Free Image to PDF Converter | img2pdf.in" />
-        <meta property="og:description" content="Convert images to PDF easily. Supports JPG, PNG, and more." />
+        <meta charSet="UTF-8" />
+        <title>Convert Images to PDF Online - Free & Fast | img2pdf.in</title>
+        <meta
+          name="description"
+          content="Convert your images to PDF quickly and securely with img2pdf.in. No registration required."
+        />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="author" content="img2pdf.in" />
+        <meta
+          name="keywords"
+          content="Image to PDF, Convert Image to PDF, JPG to PDF, PNG to PDF, Free Image to PDF Converter, Online Image to PDF Converter"
+        />
+        <link rel="canonical" href="https://img2pdf.in" />
+        <meta
+          property="og:site_name"
+          content="img2pdf.in - Free Online Image to PDF Converter"
+        />
+        <meta
+          property="og:title"
+          content="Convert Images to PDF Online - Free & Secure | img2pdf.in"
+        />
+        <meta
+          property="og:description"
+          content="Convert your images to PDF quickly and securely with img2pdf.in. Supports JPG, PNG, and more. No registration required."
+        />
         <meta property="og:image" content="/images/og-image.png" />
+        <meta property="og:type" content="website" />
         <meta property="og:url" content="https://img2pdf.in" />
         <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:site" content="@img2pdf" />
+        <meta name="twitter:creator" content="@img2pdf" />
+        <meta
+          name="twitter:title"
+          content="Convert Images to PDF Online - Free & Secure | img2pdf.in"
+        />
+        <meta
+          name="twitter:description"
+          content="Convert your images to PDF quickly and securely with img2pdf.in. Supports JPG, PNG, and more. No registration required."
+        />
+        <meta name="twitter:image" content="/images/og-image.png" />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://img2pdf.in" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="32x32"
+          href="/icons/favicon-32x32.png"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          sizes="16x16"
+          href="/icons/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
         <script type="application/ld+json">
           {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "url": "https://img2pdf.in",
-            "name": "img2pdf.in",
-            "description": "A free tool to convert images to PDFs.",
-            "publisher": {
-              "@type": "Organization",
-              "name": "img2pdf.in"
-            }
+            '@context': 'https://schema.org',
+            '@type': 'WebSite',
+            url: 'https://img2pdf.in',
+            name: 'img2pdf.in',
+            description: 'A free tool to convert images to PDFs.',
+            publisher: {
+              '@type': 'Organization',
+              name: 'img2pdf.in',
+            },
           })}
         </script>
       </Head>
@@ -313,8 +353,11 @@ export default function Home() {
 
         <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
           <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
-            Image to PDF
+            Free Online Image to PDF Converter
           </h1>
+          <p className="text-center text-gray-700 dark:text-gray-300 mb-6">
+            Easily convert your JPG, PNG, and other image files to PDF. No registration, no watermark, and 100% secure.
+          </p>
 
           <div
             onClick={handleZoneClick}
@@ -349,7 +392,10 @@ export default function Home() {
                 collisionDetection={closestCenter}
                 onDragEnd={handleDragEnd}
               >
-                <SortableContext items={images.map(img => img.id)} strategy={verticalListSortingStrategy}>
+                <SortableContext
+                  items={images.map((img) => img.id)}
+                  strategy={verticalListSortingStrategy}
+                >
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {images.map((img, index) => (
                       <SortableImage
@@ -373,7 +419,7 @@ export default function Home() {
               className="flex items-center justify-center px-6 py-4 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors focus:outline-none"
               aria-label="Rename PDF"
             >
-              <AiOutlineEdit className="w-6 h-6" /> 
+              <AiOutlineEdit className="w-6 h-6" />
             </button>
 
             <button
@@ -415,7 +461,7 @@ export default function Home() {
           pauseOnFocusLoss
           draggable
           pauseOnHover
-          theme={isDarkMode ? "dark" : "light"}
+          theme={isDarkMode ? 'dark' : 'light'}
         />
       </div>
     </>

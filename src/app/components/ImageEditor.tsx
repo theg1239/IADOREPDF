@@ -12,15 +12,15 @@ interface ImageEditorProps {
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel }) => {
-  const cropperRef = useRef<ReactCropperElement>(null); // Correct ref type for cropper
+  const cropperRef = useRef<ReactCropperElement>(null); 
 
   const handleSave = useCallback(() => {
-    const cropper = cropperRef.current?.cropper; // Access the cropper instance properly
+    const cropper = cropperRef.current?.cropper; 
     if (cropper) {
       const croppedCanvas = cropper.getCroppedCanvas();
       if (croppedCanvas) {
-        const newSrc = croppedCanvas.toDataURL('image/jpeg'); // Generate new blob URL for the edited image
-        onUpdate(newSrc); // Pass newSrc correctly
+        const newSrc = croppedCanvas.toDataURL('image/jpeg'); 
+        onUpdate(newSrc); 
       }
     }
   }, [onUpdate]);
