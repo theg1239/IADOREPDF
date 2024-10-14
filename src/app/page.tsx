@@ -1,101 +1,299 @@
-import Image from "next/image";
+// src/app/page.tsx
+
+'use client';
+
+import { useState, useRef } from 'react';
+import jsPDF from 'jspdf';
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { AiOutlineCloudUpload, AiOutlineLoading3Quarters } from 'react-icons/ai';
+import SortableImage from './components/SortableImage';
+import clsx from 'clsx';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import imageCompression from 'browser-image-compression';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [images, setImages] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Initialize DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5, // Drag activation distance
+      },
+    })
+  );
+
+  // Handle image upload via file input
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Compress images before uploading
+    const compressedFiles = await Promise.all(
+      files.map(async (file) => {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        try {
+          return await imageCompression(file, options);
+        } catch (error) {
+          console.error('Error compressing image:', error);
+          return file; // Return original file if compression fails
+        }
+      })
+    );
+
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    setImages((prevImages) => [...prevImages, ...imageUrls]);
+    e.target.value = ''; // Reset the input value
+  };
+
+  // Handle image removal
+  const handleRemoveImage = (index: number) => {
+    URL.revokeObjectURL(images[index]); // Free up memory
+    setImages((prevImages) => prevImages.filter((_, i) => i !== index));
+  };
+
+  // Handle image update after cropping
+  const handleUpdateImage = (index: number, newSrc: string) => {
+    setImages((prevImages) =>
+      prevImages.map((img, i) => (i === index ? newSrc : img))
+    );
+  };
+
+  // Handle drag end event
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      const oldIndex = images.findIndex((img) => img === active.id);
+      const newIndex = images.findIndex((img) => img === over.id);
+      setImages((images) => arrayMove(images, oldIndex, newIndex));
+    }
+  };
+
+  // Generate PDF from images
+  const createPDF = async () => {
+    try {
+      setIsGenerating(true);
+      const pdf = new jsPDF('portrait', 'pt', 'a4');
+
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const imgElement = new Image();
+        imgElement.src = img;
+
+        await new Promise<void>((resolve, reject) => {
+          imgElement.onload = () => {
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = pdf.internal.pageSize.getHeight();
+            const imgWidth = imgElement.width;
+            const imgHeight = imgElement.height;
+
+            // Calculate image dimensions to fit into PDF while maintaining aspect ratio
+            let renderedWidth = pdfWidth;
+            let renderedHeight = (imgHeight * pdfWidth) / imgWidth;
+
+            if (renderedHeight > pdfHeight) {
+              renderedHeight = pdfHeight;
+              renderedWidth = (imgWidth * pdfHeight) / imgHeight;
+            }
+
+            if (i > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(
+              imgElement,
+              'JPEG',
+              (pdfWidth - renderedWidth) / 2,
+              (pdfHeight - renderedHeight) / 2,
+              renderedWidth,
+              renderedHeight
+            );
+            resolve();
+          };
+          imgElement.onerror = () => {
+            reject(new Error('Image load error'));
+          };
+        });
+      }
+
+      pdf.save('images.pdf');
+      toast.success('PDF generated successfully!');
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast.error('Failed to generate PDF. Please try again.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Handle files dropped via drag-and-drop
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const files = Array.from(e.dataTransfer.files).filter((file) =>
+      file.type.startsWith('image/')
+    );
+    if (files.length === 0) return;
+    handleCompressedFiles(files);
+  };
+
+  // Prevent default behavior for drag over
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+  };
+
+  // Handle drag enter
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(true);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+  };
+
+  // Trigger the hidden file input when the drop zone is clicked
+  const handleZoneClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Handle compression and setting images
+  const handleCompressedFiles = async (files: File[]) => {
+    const compressedFiles = await Promise.all(
+      files.map(async (file) => {
+        const options = {
+          maxSizeMB: 1,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        };
+        try {
+          return await imageCompression(file, options);
+        } catch (error) {
+          console.error('Error compressing image:', error);
+          return file; // Return original file if compression fails
+        }
+      })
+    );
+
+    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    setImages((prevImages) => [...prevImages, ...imageUrls]);
+  };
+
+  return (
+    <div
+      className="min-h-screen bg-gray-900 flex flex-col items-center justify-center px-4 py-8 relative"
+      onDrop={handleDrop}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+    >
+      {/* Dragging Overlay */}
+      <div
+        className={clsx(
+          'absolute inset-0 bg-black bg-opacity-50 opacity-0 pointer-events-none transition-opacity duration-300',
+          isDraggingOver && 'opacity-100'
+        )}
+      ></div>
+
+      <div className="w-full max-w-4xl bg-gray-800 shadow-lg rounded-lg p-8 relative">
+        {/* Header */}
+        <h1 className="text-3xl font-semibold text-center mb-6 text-gray-100">
+          Image to PDF Converter
+        </h1>
+
+        {/* Clickable and Draggable Drop Zone */}
+        <div
+          onClick={handleZoneClick}
+          className="border-2 border-dashed border-blue-500 rounded-md p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-700 transition-colors cursor-pointer relative"
+        >
+          <AiOutlineCloudUpload className="text-4xl text-blue-500 mb-4" />
+          <p className="text-gray-300 text-center">
+            Drag and drop images anywhere on the page, or click anywhere to{' '}
+            <span className="text-blue-500 underline">browse</span>
+          </p>
+          <input
+            ref={fileInputRef}
+            id="file-upload"
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+
+        {/* Image Preview with Drag-and-Drop Reordering */}
+        {images.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-medium text-gray-300 mb-4">
+              Uploaded Images
+            </h2>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={images} strategy={verticalListSortingStrategy}>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                  {images.map((img, index) => (
+                    <SortableImage
+                      key={img}
+                      id={img}
+                      src={img}
+                      index={index}
+                      onRemove={handleRemoveImage}
+                      onUpdate={handleUpdateImage}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
+
+        {/* Convert Button */}
+        <button
+          onClick={createPDF}
+          disabled={images.length === 0 || isGenerating}
+          className={clsx(
+            'w-full flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors',
+            {
+              'opacity-50 cursor-not-allowed': images.length === 0 || isGenerating,
+            }
+          )}
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          {isGenerating ? (
+            <>
+              <AiOutlineLoading3Quarters className="animate-spin mr-2" />
+              Generating PDF...
+            </>
+          ) : (
+            'Convert to PDF'
+          )}
+        </button>
+      </div>
+      {/* Toast Notifications */}
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar />
     </div>
   );
 }
