@@ -374,6 +374,7 @@ export default function Home() {
               type="file"
               multiple
               accept="image/*"
+              capture="environment"
               onChange={handleImageUpload}
               className="hidden"
             />
