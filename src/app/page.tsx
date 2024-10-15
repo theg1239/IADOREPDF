@@ -366,7 +366,7 @@ export default function Home() {
           >
             <AiOutlineCloudUpload className="text-4xl text-blue-500 dark:text-blue-400 mb-4" />
             <p className="text-gray-700 dark:text-gray-300 text-center">
-              Drag and drop images here, or click to browse. You can also paste images from the clipboard.
+              Drag and drop, paste images here, or click to browse.
             </p>
             <input
               ref={fileInputRef}
