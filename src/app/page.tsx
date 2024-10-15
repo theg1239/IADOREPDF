@@ -373,8 +373,7 @@ export default function Home() {
               id="file-upload"
               type="file"
               multiple
-              accept="image/*"
-              capture="environment"
+              accept="image/*;capture=camera"
               onChange={handleImageUpload}
               className="hidden"
             />
