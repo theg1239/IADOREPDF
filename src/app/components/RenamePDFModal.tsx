@@ -61,7 +61,6 @@ const RenamePDFModal = ({ isOpen, onClose, onRename, currentName }: RenamePDFMod
               <FaTimes size={18} />
             </button>
 
-            {/* Modal Content */}
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-4">
               Rename PDF
             </h3>

@@ -4,7 +4,6 @@ import localFont from 'next/font/local';
 import './globals.css';
 import { DarkModeProvider } from './context/DarkModeContext';
 import DarkModeToggle from './components/DarkModeToggle';
-import Link from 'next/link';
 
 const geistSans = localFont({
   src: './fonts/GeistVF.woff',
@@ -35,13 +34,14 @@ export default function RootLayout({
         <DarkModeProvider>
           <div className="flex flex-col min-h-screen">
             <header className="w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 pt-3 py-2 px-4 shadow-md flex items-center justify-between h-16">
-              <div className="flex items-center space-x-2 pt-2">
-                <Image
-                  src="/images/og-image.png" 
-                  alt="Img2PDF Logo"
-                  width={200}  
-                  height={50}  
-                />
+              <div className="flex items-center space-x-1"> 
+                <img
+  src="/images/IMAGE2PDF.png"
+  alt="Img2PDF Logo"
+  width={200}
+  height={50}
+  className="inline-block align-middle"
+/>
               </div>
               <DarkModeToggle />
             </header>

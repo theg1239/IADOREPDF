@@ -2,7 +2,7 @@ import React, { useRef, useCallback } from 'react';
 import Cropper, { ReactCropperElement } from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaCheck } from 'react-icons/fa';
+import { FaTimes, FaCheck, FaUndo, FaRedo } from 'react-icons/fa';
 import clsx from 'clsx';
 
 interface ImageEditorProps {
@@ -24,6 +24,20 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel 
       }
     }
   }, [onUpdate]);
+
+  const rotateLeft = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      cropper.rotate(-90);
+    }
+  };
+
+  const rotateRight = () => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      cropper.rotate(90);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -70,7 +84,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel 
               checkOrientation={false}
               ref={cropperRef}
               movable={true}
-              rotatable={false}
+              rotatable={true} 
               scalable={true}
               zoomable={true}
               cropBoxResizable={true}
@@ -79,12 +93,29 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ imageSrc, onUpdate, onCancel 
             />
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between p-4 border-t border-gray-200 dark:border-gray-700 space-y-4 md:space-y-0">
+          <div className="flex items-center justify-center p-4 border-t border-gray-200 dark:border-gray-700 space-x-4 overflow-x-auto">
+            <button
+              onClick={rotateLeft}
+              className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none"
+              aria-label="Rotate Left"
+            >
+              <FaUndo className="mr-2" /> 
+            </button>
+
             <button
               onClick={handleSave}
-              className="flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 focus:outline-none transition-colors"
+              className="flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-700 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors focus:outline-none"
+              aria-label="Save Edited Image"
             >
-              <FaCheck className="mr-2" /> Save
+              <FaCheck className="mr-2" />
+            </button>
+
+            <button
+              onClick={rotateRight}
+              className="flex items-center px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors focus:outline-none"
+              aria-label="Rotate Right"
+            >
+              <FaRedo className="mr-2" /> 
             </button>
           </div>
         </motion.div>

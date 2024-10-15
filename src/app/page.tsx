@@ -34,6 +34,8 @@ interface ImageType {
   src: string;
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'image/webp'];
+
 export default function Home() {
   const [images, setImages] = useState<ImageType[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -63,8 +65,18 @@ export default function Home() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    // Filter out non-image files
+    const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
+    const invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} invalid file(s) skipped. Only image files are allowed.`);
+    }
+
+    if (validFiles.length === 0) return;
+
     const compressedFiles = await Promise.all(
-      files.map(async (file) => {
+      validFiles.map(async (file) => {
         const options = {
           maxSizeMB: 1,
           maxWidthOrHeight: 1920,
@@ -74,12 +86,15 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file;
+          toast.error(`Error compressing ${file.name}. Skipping this file.`);
+          return null;
         }
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    const filteredCompressedFiles = compressedFiles.filter((file): file is File => file !== null);
+
+    const imageUrls = filteredCompressedFiles.map((file) => URL.createObjectURL(file));
     const newImages: ImageType[] = imageUrls.map((url) => ({
       id: generateUniqueId(),
       src: url,
@@ -154,7 +169,7 @@ export default function Home() {
             pdf.addPage();
           }
 
-          pdf.addImage(imgElement, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+          pdf.addImage(imgElement, 'JPEG', 0, 0, renderedWidth, renderedHeight);
         } catch (error) {
           console.error(`Error loading image ${i}:`, error);
           toast.error(`Failed to load image ${i + 1}. Skipping this image.`);
@@ -174,11 +189,19 @@ export default function Home() {
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDraggingOver(false);
-    const files = Array.from(e.dataTransfer.files).filter((file) =>
-      file.type.startsWith('image/')
-    );
-    if (files.length === 0) return;
-    handleCompressedFiles(files);
+    const files = Array.from(e.dataTransfer.files);
+
+    // Filter image files
+    const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
+    const invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} invalid file(s) skipped. Only image files are allowed.`);
+    }
+
+    if (validFiles.length === 0) return;
+
+    handleCompressedFiles(validFiles);
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -202,8 +225,18 @@ export default function Home() {
   const { isDarkMode } = useDarkMode();
 
   const handleCompressedFiles = async (files: File[]) => {
+    // Filter image files again for extra safety
+    const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
+    let invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
+
+    if (invalidFiles.length > 0) {
+      toast.error(`${invalidFiles.length} invalid file(s) skipped. Only image files are allowed.`);
+    }
+
+    if (validFiles.length === 0) return;
+
     const compressedFiles = await Promise.all(
-      files.map(async (file) => {
+      validFiles.map(async (file) => {
         const options = {
           maxSizeMB: 1,
           maxWidthOrHeight: 1920,
@@ -213,12 +246,15 @@ export default function Home() {
           return await imageCompression(file, options);
         } catch (error) {
           console.error('Error compressing image:', error);
-          return file;
+          toast.error(`Error compressing ${file.name}. Skipping this file.`);
+          return null;
         }
       })
     );
 
-    const imageUrls = compressedFiles.map((file) => URL.createObjectURL(file));
+    const filteredCompressedFiles = compressedFiles.filter((file): file is File => file !== null);
+
+    const imageUrls = filteredCompressedFiles.map((file) => URL.createObjectURL(file));
     const newImages: ImageType[] = imageUrls.map((url) => ({
       id: generateUniqueId(),
       src: url,
@@ -240,18 +276,33 @@ export default function Home() {
     toast.success(`PDF renamed to "${newName}"`);
   };
 
+  // Updated handlePaste function without importing ClipboardEvent from React
   const handlePaste = (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (items) {
+      const imageFiles: File[] = [];
+      let invalidFilesCount = 0;
+
       for (const item of Array.from(items)) {
         if (item.type.startsWith('image/')) {
           const file = item.getAsFile();
           if (file) {
-            const imageUrl = URL.createObjectURL(file);
-            const newImage: ImageType = { id: generateUniqueId(), src: imageUrl };
-            setImages((prevImages) => [...prevImages, newImage]);
+            if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+              imageFiles.push(file);
+            } else {
+              // Count invalid image types
+              invalidFilesCount++;
+            }
           }
         }
+      }
+
+      if (invalidFilesCount > 0) {
+        toast.error(`${invalidFilesCount} invalid image file(s) skipped.`);
+      }
+
+      if (imageFiles.length > 0) {
+        handleCompressedFiles(imageFiles);
       }
     }
   };
@@ -264,7 +315,10 @@ export default function Home() {
         URL.revokeObjectURL(img.src);
       });
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [images]); // Consider whether 'images' should be a dependency
+  // Note: Adding 'images' as a dependency here may cause unnecessary re-renders and
+  // event listener re-registrations. You might want to exclude it or memoize 'handlePaste'.
 
   return (
     <>
@@ -373,7 +427,7 @@ export default function Home() {
               id="file-upload"
               type="file"
               multiple
-              accept="image/*;capture=camera"
+              accept={ALLOWED_IMAGE_TYPES.join(',')}
               onChange={handleImageUpload}
               className="hidden"
             />
