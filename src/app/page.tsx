@@ -223,7 +223,6 @@ export default function Home() {
   const { isDarkMode } = useDarkMode();
 
   const handleCompressedFiles = async (files: File[]) => {
-    // Filter image files again for extra safety
     const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
     let invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
 
