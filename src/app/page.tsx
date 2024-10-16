@@ -399,7 +399,7 @@ export default function Home() {
 
         <div className="w-full max-w-4xl bg-gray-100 dark:bg-gray-800 shadow-lg rounded-lg p-8 relative transition-colors duration-300">
           <h1 className="text-3xl font-semibold text-center mb-6 text-gray-900 dark:text-gray-100">
-            Images to PDF
+            Image to PDF
           </h1>
 
           <div
