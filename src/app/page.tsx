@@ -65,7 +65,6 @@ export default function Home() {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
-    // Filter out non-image files
     const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
     const invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
 
@@ -191,7 +190,6 @@ export default function Home() {
     setIsDraggingOver(false);
     const files = Array.from(e.dataTransfer.files);
 
-    // Filter image files
     const validFiles = files.filter(file => ALLOWED_IMAGE_TYPES.includes(file.type));
     const invalidFiles = files.filter(file => !ALLOWED_IMAGE_TYPES.includes(file.type));
 
@@ -276,7 +274,6 @@ export default function Home() {
     toast.success(`PDF renamed to "${newName}"`);
   };
 
-  // Updated handlePaste function without importing ClipboardEvent from React
   const handlePaste = (e: ClipboardEvent) => {
     const items = e.clipboardData?.items;
     if (items) {
@@ -290,7 +287,6 @@ export default function Home() {
             if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
               imageFiles.push(file);
             } else {
-              // Count invalid image types
               invalidFilesCount++;
             }
           }
@@ -315,10 +311,7 @@ export default function Home() {
         URL.revokeObjectURL(img.src);
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [images]); // Consider whether 'images' should be a dependency
-  // Note: Adding 'images' as a dependency here may cause unnecessary re-renders and
-  // event listener re-registrations. You might want to exclude it or memoize 'handlePaste'.
+  }, [images]); 
 
   return (
     <>
@@ -427,7 +420,7 @@ export default function Home() {
               id="file-upload"
               type="file"
               multiple
-              accept={ALLOWED_IMAGE_TYPES.join(',')}
+              accept="image/*;capture=camera"
               onChange={handleImageUpload}
               className="hidden"
             />
