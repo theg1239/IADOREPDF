@@ -311,7 +311,7 @@ export default function Home() {
         URL.revokeObjectURL(img.src);
       });
     };
-  }, [images]); 
+  }, []); 
 
   return (
     <>
