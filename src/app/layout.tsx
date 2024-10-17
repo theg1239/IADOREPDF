@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: 'IMG2PDF - Convert Images to PDF',
-  description: 'Easily convert multiple images into a single PDF file.',
+  description: 'Easily convert multiple images into a single PDF file. Edit and crop the images you upload easily.x`',
 };
 
 export default function RootLayout({
